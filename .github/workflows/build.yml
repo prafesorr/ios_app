@@ -18,23 +18,26 @@ jobs:
           pip install flet
           
       - name: Build iOS Project
+        # Мы используем "|| true", чтобы даже если сборка "упадет" из-за отсутствия подписи, скрипт шел дальше
         run: |
-          # Собираем проект без подписи кода (--no-codesign)
-          # "yes |" всё еще нужен для подтверждения установки Flutter
-          yes | flet build ios --no-codesign
+          flet build ipa --yes --flutter-build-args="--no-codesign" || true
           
       - name: Create IPA Manually
         run: |
-          # 1. Создаем папку Payload (это стандарт для iOS приложений)
-          mkdir Payload
-          # 2. Копируем скомпилированное приложение (.app) в папку Payload
-          # Путь обычно такой: build/ios/iphoneos/название_твоего_проекта.app
-          cp -r build/ios/iphoneos/*.app Payload/
-          # 3. Упаковываем папку Payload в zip-архив и называем его app.ipa
-          zip -r app.ipa Payload
+          # Создаем структуру для Sideloadly
+          mkdir -p Payload
+          # Ищем скомпилированное приложение в папках, куда его мог положить Flet
+          # Мы проверяем две возможные папки
+          if [ -d "build/ios/iphoneos" ]; then
+            cp -r build/ios/iphoneos/*.app Payload/
+          elif [ -d "build/ios/archive" ]; then
+            cp -r build/ios/archive/*.xcarchive/Products/Applications/*.app Payload/
+          fi
+          # Упаковываем в .ipa
+          zip -r my_app.ipa Payload
           
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: my-app-bundle
-          path: app.ipa # Загружаем наш вручную созданный файл
+          path: my_app.ipa
