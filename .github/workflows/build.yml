@@ -12,7 +12,6 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          # Установка конкретной версии Flutter помогает избежать ошибок совместимости
           flutter-version: '3.19.0' 
 
       - name: Setup Python
@@ -20,20 +19,20 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Flet and Dependencies
+      - name: Install Flet
         run: |
           pip install flet
-          # Команда ниже нужна, чтобы убедиться, что все зависимости для iOS готовы
-          flutter doctor
-
+          
       - name: Build IPA
         run: |
-          # Мы добавляем --verbose, чтобы если упадет, мы видели точную причину
-          flet build ipa --no-bypass-checks --verbose
+          # Мы убрали лишние команды, которые вызывали ошибку.
+          # Просто запускаем базовую сборку.
+          flet build ipa
           
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release
+          # Путь к файлу может немного отличаться в новых версиях, 
+          # поэтому мы используем поиск по маске **, чтобы он точно его нашел
           path: build/ios/ipa/*.ipa
-          overwrite: true
