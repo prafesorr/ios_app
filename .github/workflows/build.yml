@@ -1,0 +1,27 @@
+name: Build iOS App
+on: [push] # Сборка будет запускаться каждый раз, когда ты меняешь код
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Flet
+        run: pip install flet
+
+      - name: Build IPA
+        run: |
+          # Эта команда создает "неподписанный" архив для iOS
+          flet build ipa --no-bypass-checks
+          
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-release
+          path: build/ios/ipa/*.ipa
