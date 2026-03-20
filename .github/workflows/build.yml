@@ -17,15 +17,24 @@ jobs:
         run: |
           pip install flet
           
-      - name: Build IPA
+      - name: Build iOS Project
         run: |
-          # Команда "yes" бесконечно подает на вход букву "y". 
-          # Это автоматически ответит "yes" на запрос об установке Flutter.
-          yes | flet build ipa
+          # Собираем проект без подписи кода (--no-codesign)
+          # "yes |" всё еще нужен для подтверждения установки Flutter
+          yes | flet build ios --no-codesign
+          
+      - name: Create IPA Manually
+        run: |
+          # 1. Создаем папку Payload (это стандарт для iOS приложений)
+          mkdir Payload
+          # 2. Копируем скомпилированное приложение (.app) в папку Payload
+          # Путь обычно такой: build/ios/iphoneos/название_твоего_проекта.app
+          cp -r build/ios/iphoneos/*.app Payload/
+          # 3. Упаковываем папку Payload в zip-архив и называем его app.ipa
+          zip -r app.ipa Payload
           
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
-          # Ищем любой .ipa файл, который создаст flet, в любой подпапке
-          path: "**/*.ipa"
+          name: my-app-bundle
+          path: app.ipa # Загружаем наш вручную созданный файл
