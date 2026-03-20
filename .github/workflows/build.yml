@@ -5,27 +5,35 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4 # Обновили до v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Install Python
-        uses: actions/setup-python@v5 # Обновили до v5
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          # Установка конкретной версии Flutter помогает избежать ошибок совместимости
+          flutter-version: '3.19.0' 
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
       - name: Install Flet and Dependencies
         run: |
           pip install flet
-          # Иногда для сборки нужны дополнительные инструменты Flutter, 
-          # Flet сам их подтянет при выполнении команды build
+          # Команда ниже нужна, чтобы убедиться, что все зависимости для iOS готовы
+          flutter doctor
 
       - name: Build IPA
         run: |
-          # Команда для создания неподписанного IPA
-          flet build ipa --no-bypass-checks
+          # Мы добавляем --verbose, чтобы если упадет, мы видели точную причину
+          flet build ipa --no-bypass-checks --verbose
           
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4 # ВОТ ТУТ ГЛАВНОЕ ИСПРАВЛЕНИЕ (v3 на v4)
+        uses: actions/upload-artifact@v4
         with:
           name: app-release
           path: build/ios/ipa/*.ipa
-          overwrite: true # Параметр для v4, чтобы можно было перезаписывать файл
+          overwrite: true
