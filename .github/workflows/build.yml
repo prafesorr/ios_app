@@ -1,27 +1,31 @@
 name: Build iOS App
-on: [push] # Сборка будет запускаться каждый раз, когда ты меняешь код
+on: [push]
 
 jobs:
   build:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4 # Обновили до v4
 
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5 # Обновили до v5
         with:
           python-version: '3.10'
 
-      - name: Install Flet
-        run: pip install flet
+      - name: Install Flet and Dependencies
+        run: |
+          pip install flet
+          # Иногда для сборки нужны дополнительные инструменты Flutter, 
+          # Flet сам их подтянет при выполнении команды build
 
       - name: Build IPA
         run: |
-          # Эта команда создает "неподписанный" архив для iOS
+          # Команда для создания неподписанного IPA
           flet build ipa --no-bypass-checks
           
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4 # ВОТ ТУТ ГЛАВНОЕ ИСПРАВЛЕНИЕ (v3 на v4)
         with:
           name: app-release
           path: build/ios/ipa/*.ipa
+          overwrite: true # Параметр для v4, чтобы можно было перезаписывать файл
