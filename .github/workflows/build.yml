@@ -8,12 +8,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          flutter-version: '3.19.0' 
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -25,14 +19,13 @@ jobs:
           
       - name: Build IPA
         run: |
-          # Мы убрали лишние команды, которые вызывали ошибку.
-          # Просто запускаем базовую сборку.
-          flet build ipa
+          # Команда "yes" бесконечно подает на вход букву "y". 
+          # Это автоматически ответит "yes" на запрос об установке Flutter.
+          yes | flet build ipa
           
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          # Путь к файлу может немного отличаться в новых версиях, 
-          # поэтому мы используем поиск по маске **, чтобы он точно его нашел
-          path: build/ios/ipa/*.ipa
+          # Ищем любой .ipa файл, который создаст flet, в любой подпапке
+          path: "**/*.ipa"
