@@ -14,26 +14,38 @@ jobs:
           python-version: '3.10'
 
       - name: Install Flet
-        run: |
-          pip install flet
+        run: pip install flet
           
       - name: Build iOS Project
-        # Мы используем "|| true", чтобы даже если сборка "упадет" из-за отсутствия подписи, скрипт шел дальше
         run: |
+          # Пытаемся собрать проект. Если упадет — не страшно, идем дальше.
           flet build ipa --yes --flutter-build-args="--no-codesign" || true
           
-      - name: Create IPA Manually
+      - name: Diagnostic & Create IPA
         run: |
-          # Создаем структуру для Sideloadly
+          echo "--- Ищем скомпилированное приложение (.app) ---"
+          # Эта команда выведет список всех папок .app, которые удалось создать
+          find build -name "*.app" -type d
+          
+          # Создаем структуру Payload
           mkdir -p Payload
-          # Ищем скомпилированное приложение в папках, куда его мог положить Flet
-          # Мы проверяем две возможные папки
-          if [ -d "build/ios/iphoneos" ]; then
-            cp -r build/ios/iphoneos/*.app Payload/
-          elif [ -d "build/ios/archive" ]; then
-            cp -r build/ios/archive/*.xcarchive/Products/Applications/*.app Payload/
+          
+          # Пытаемся скопировать .app файл. 
+          # Мы берем первый найденный .app, который НЕ для симулятора.
+          APP_PATH=$(find build/ios -name "*.app" | grep -v "simulator" | head -n 1)
+          
+          if [ -z "$APP_PATH" ]; then
+            echo "ОШИБКА: Приложение .app не найдено. Сборка не удалась."
+            exit 1
           fi
-          # Упаковываем в .ipa
+          
+          echo "Копируем приложение из: $APP_PATH"
+          cp -r "$APP_PATH" Payload/
+          
+          # Проверяем, что внутри Payload что-то есть
+          ls -R Payload/
+          
+          # Упаковываем правильно: внутри архива должна быть только папка Payload
           zip -r my_app.ipa Payload
           
       - name: Upload Artifact
