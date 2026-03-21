@@ -18,34 +18,34 @@ jobs:
           
       - name: Build iOS Project
         run: |
-          # Пытаемся собрать проект. Если упадет — не страшно, идем дальше.
+          # Собираем. Игнорируем ошибку отсутствия подписи.
           flet build ipa --yes --flutter-build-args="--no-codesign" || true
           
       - name: Diagnostic & Create IPA
         run: |
-          echo "--- Ищем скомпилированное приложение (.app) ---"
-          # Эта команда выведет список всех папок .app, которые удалось создать
-          find build -name "*.app" -type d
+          echo "--- Начинаем поиск и упаковку ---"
           
-          # Создаем структуру Payload
-          mkdir -p Payload
-          
-          # Пытаемся скопировать .app файл. 
-          # Мы берем первый найденный .app, который НЕ для симулятора.
-          APP_PATH=$(find build/ios -name "*.app" | grep -v "simulator" | head -n 1)
+          # Ищем путь к любому .app файлу во всем каталоге build
+          APP_PATH=$(find build -name "*.app" -type d | grep -v "simulator" | head -n 1)
           
           if [ -z "$APP_PATH" ]; then
-            echo "ОШИБКА: Приложение .app не найдено. Сборка не удалась."
+            echo "ОШИБКА: Приложение .app всё еще не найдено!"
+            ls -R build
             exit 1
           fi
           
-          echo "Копируем приложение из: $APP_PATH"
+          echo "Приложение найдено здесь: $APP_PATH"
+          
+          # Создаем структуру для IPA
+          mkdir -p Payload
+          
+          # Копируем найденное приложение в Payload
           cp -r "$APP_PATH" Payload/
           
-          # Проверяем, что внутри Payload что-то есть
+          # Проверяем, что внутри Payload
           ls -R Payload/
           
-          # Упаковываем правильно: внутри архива должна быть только папка Payload
+          # Упаковываем в IPA
           zip -r my_app.ipa Payload
           
       - name: Upload Artifact
