@@ -1,68 +1,76 @@
 import flet as ft
 import random
+import asyncio
 
-def main(page: ft.Page):
-    # Настройки страницы
+async def main(page: ft.Page):
+    # Базовые настройки для iOS
+    page.title = "KUNIGRAM"
     page.bgcolor = "#000000"
     page.theme_mode = ft.ThemeMode.DARK
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    
-    # Цвета с аватарки
-    NEON_PURPLE = "#A855F7"
-    
-    # Текст ответа
-    res_text = ft.Text(
-        value="TAP",
-        size=60,
-        color=NEON_PURPLE,
-        weight="bold",
-        opacity=1,
-        animate_opacity=200,
+    page.padding = 50
+
+    # Фразы
+    phrases = [
+        "ДА", "НЕТ", "РИСКНИ", "ПОЗЖЕ", 
+        "100%", "ЗАБУДЬ", "ТВОЙ ШАНС", "НЕ СТОИТ", "СКВИРТ"
+    ]
+
+    # Текст ответа (Фиолетовый как на аве)
+    result_text = ft.Text(
+        value="УЗНАЙ",
+        size=55,
+        color="#A855F7",
+        weight=ft.FontWeight.BOLD,
+        text_align=ft.TextAlign.CENTER,
     )
 
-    # Список фраз
-    quotes = ["ДА", "НЕТ", "РИСКНИ", "ПОЗЖЕ", "100%", "ЗАБУДЬ", "ТВОЙ ШАНС", "НЕ СТОИТ", "СКВИРТ"]
-
-    def shake_oracle(e):
-        # Меняем текст и анимируем прозрачность (быстрое мигание)
-        res_text.opacity = 0
-        page.update()
+    # Функция обработки нажатия
+    async def shake(e):
+        # Эффект мигания для живости
+        result_text.opacity = 0
+        await page.update_async()
+        await asyncio.sleep(0.1)
         
-        res_text.value = random.choice(quotes)
-        res_text.opacity = 1
-        page.update()
+        result_text.value = random.choice(phrases)
+        result_text.opacity = 1
+        await page.update_async()
 
-    # Основная кнопка (просто круг со свечением)
+    # Кнопка-молния (черная на фиолетовом фоне)
     btn = ft.Container(
-        content=ft.Icon(ft.icons.BOLT, color="#000000", size=40),
-        width=120,
-        height=120,
-        bgcolor=NEON_PURPLE,
-        border_radius=60,
+        content=ft.Icon(ft.icons.BOLT, color="black", size=40),
+        width=100,
+        height=100,
+        bgcolor="#A855F7",
+        border_radius=50,
+        on_click=shake,
         alignment=ft.alignment.center,
-        on_click=shake_oracle,
         shadow=ft.BoxShadow(
-            blur_radius=40,
-            color=NEON_PURPLE,
+            blur_radius=30,
+            color="#A855F7",
             spread_radius=-5,
         ),
     )
 
     # Собираем экран
-    page.add(
+    await page.add_async(
         ft.Column(
             [
                 ft.Container(
-                    content=res_text,
-                    height=200,
+                    content=result_text,
+                    height=250,
                     alignment=ft.alignment.center,
                 ),
-                ft.Container(height=50),
+                ft.Container(height=40),
                 btn,
+                ft.Container(height=20),
+                ft.Text("ORACLE BY KUNIGRAM", size=10, color="#333333"),
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         )
     )
 
-ft.app(target=main)
+# Запуск в асинхронном режиме (важно для iOS)
+if __name__ == "__main__":
+    ft.app(target=main)
