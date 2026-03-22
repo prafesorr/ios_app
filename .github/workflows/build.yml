@@ -13,34 +13,55 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Flet
-        run: pip install flet
+      - name: Install Flet and Pillow
+        run: |
+          pip install flet Pillow
           
+      - name: Fix Icon (Remove Alpha Channel)
+        run: |
+          python - <<EOF
+          from PIL import Image
+          import os
+          icon_path = "assets/icon.png"
+          if os.path.exists(icon_path):
+              img = Image.open(icon_path)
+              if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+                  print("Removing alpha channel from icon...")
+                  background = Image.new("RGB", img.size, (255, 255, 255))
+                  if img.mode == 'P': img = img.convert('RGBA')
+                  background.paste(img, mask=img.split()[3])
+                  background.save(icon_path, "PNG")
+                  print("Icon fixed!")
+              else:
+                  print("Icon is already opaque.")
+          else:
+              print("Icon not found at assets/icon.png")
+          EOF
+
       - name: Build iOS Project
         run: |
-          # Собираем из корня (точка .)
-          # Мы добавили || true, потому что Flet может выдать ошибку в самом конце 
-          # из-за отсутствия подписи, но .app файл при этом уже будет готов.
-          flet build ipa . --yes --product "kunigram" --icon "assets/icon.png" --flutter-build-args="--no-codesign" || true
+          # ВНИМАНИЕ: Я убрал "|| true". 
+          # Теперь, если будет ошибка, мы увидим её текст в логах GitHub!
+          flet build ipa . --yes --product "kunigram" --icon "assets/icon.png" --flutter-build-args="--no-codesign"
           
       - name: Diagnostic & Create IPA
+        if: always()
         run: |
-          echo "--- Поиск скомпилированного .app ---"
-          # Ищем любой файл .app во всех папках
+          echo "--- Ищем скомпилированное приложение ---"
           APP_PATH=$(find . -name "*.app" -type d | grep -v "simulator" | head -n 1)
           
           if [ -z "$APP_PATH" ]; then
             echo "ОШИБКА: Приложение .app не найдено!"
-            ls -R
             exit 1
           fi
           
-          echo "Приложение найдено: $APP_PATH"
+          echo "Найдено: $APP_PATH"
           mkdir -p Payload
           cp -r "$APP_PATH" Payload/
           zip -r my_app.ipa Payload
           
       - name: Upload Artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: my-app-bundle
