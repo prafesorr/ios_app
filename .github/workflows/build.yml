@@ -19,7 +19,7 @@ jobs:
       - name: Build iOS Project
         run: |
           # Собираем. Игнорируем ошибку отсутствия подписи.
-          flet build ipa --yes --flutter-build-args="--no-codesign" || true
+          flet build ipa --yes --product "kunigram" --icon "assets/icon.png" --flutter-build-args="--no-codesign" || true
           
       - name: Diagnostic & Create IPA
         run: |
