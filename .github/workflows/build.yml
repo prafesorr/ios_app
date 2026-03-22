@@ -18,19 +18,15 @@ jobs:
           
       - name: Build iOS Project
         run: |
-          # 1. Заходим в папку, где лежит твой проект
-          cd ios_app
-          
-          # 2. Запускаем сборку прямо внутри этой папки
-          # Точка означает "собирай то, что в этой папке"
-          # Путь к иконке теперь простой, так как мы уже внутри ios_app
-          flet build ipa . --yes --product "kunigram" --icon "assets/icon.png" --flutter-build-args="--no-codesign"
+          # Собираем из корня (точка .)
+          # Мы добавили || true, потому что Flet может выдать ошибку в самом конце 
+          # из-за отсутствия подписи, но .app файл при этом уже будет готов.
+          flet build ipa . --yes --product "kunigram" --icon "assets/icon.png" --flutter-build-args="--no-codesign" || true
           
       - name: Diagnostic & Create IPA
-        if: always()
         run: |
           echo "--- Поиск скомпилированного .app ---"
-          # Ищем во всем репозитории, так как папка build теперь может быть внутри ios_app
+          # Ищем любой файл .app во всех папках
           APP_PATH=$(find . -name "*.app" -type d | grep -v "simulator" | head -n 1)
           
           if [ -z "$APP_PATH" ]; then
@@ -45,7 +41,6 @@ jobs:
           zip -r my_app.ipa Payload
           
       - name: Upload Artifact
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: my-app-bundle
