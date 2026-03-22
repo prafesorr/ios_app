@@ -44,6 +44,7 @@ jobs:
           flet build ipa . --yes \
             --product "kunigram" \
             --bundle-id "com.markdog.kunigram" \
+            --splash-color "#111111" \
             --flutter-build-args="--no-codesign" || true
           
       - name: Diagnostic & Create IPA
