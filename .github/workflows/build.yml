@@ -38,13 +38,11 @@ jobs:
 
       - name: Build iOS Project
         run: |
-          # Мы убрали --icon (Flet найдет его сам в папке assets)
-          # Добавили --bundle-id (это важно для порядка в iOS)
-          # Оставили || true, так как в конце он все равно ругнется на отсутствие подписи
           flet build ipa . --yes \
             --product "kunigram" \
             --bundle-id "com.markdog.kunigram" \
-            --splash-color "#111111" \
+            --no-ios-splash \
+            --splash-color "#000000" \
             --flutter-build-args="--no-codesign" || true
           
       - name: Diagnostic & Create IPA
