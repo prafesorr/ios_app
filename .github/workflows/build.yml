@@ -16,27 +16,26 @@ jobs:
       - name: Install Flet
         run: pip install flet
           
-      - name: List files for debug
-        run: |
-          echo "--- Проверяем структуру файлов ---"
-          ls -R
-          
       - name: Build iOS Project
         run: |
-          # Указываем "." (текущая папка) как путь к приложению.
-          # Если flet упадет, мы увидим причину, так как убрали || true
+          # 1. Заходим в папку, где лежит твой проект
+          cd ios_app
+          
+          # 2. Запускаем сборку прямо внутри этой папки
+          # Точка означает "собирай то, что в этой папке"
+          # Путь к иконке теперь простой, так как мы уже внутри ios_app
           flet build ipa . --yes --product "kunigram" --icon "assets/icon.png" --flutter-build-args="--no-codesign"
           
       - name: Diagnostic & Create IPA
-        if: always() # Запускать, даже если сборка выше упала, чтобы мы видели логи
+        if: always()
         run: |
           echo "--- Поиск скомпилированного .app ---"
-          APP_PATH=$(find build -name "*.app" -type d | grep -v "simulator" | head -n 1)
+          # Ищем во всем репозитории, так как папка build теперь может быть внутри ios_app
+          APP_PATH=$(find . -name "*.app" -type d | grep -v "simulator" | head -n 1)
           
           if [ -z "$APP_PATH" ]; then
             echo "ОШИБКА: Приложение .app не найдено!"
-            # Посмотрим, что вообще создалось в папке build, если она есть
-            [ -d "build" ] && ls -R build || echo "Папка build не существует"
+            ls -R
             exit 1
           fi
           
