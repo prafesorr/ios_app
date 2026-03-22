@@ -16,39 +16,37 @@ jobs:
       - name: Install Flet
         run: pip install flet
           
+      - name: List files for debug
+        run: |
+          echo "--- Проверяем структуру файлов ---"
+          ls -R
+          
       - name: Build iOS Project
         run: |
-          # Собираем. Игнорируем ошибку отсутствия подписи.
-          flet build ipa --yes --product "kunigram" --icon "assets/icon.png" --flutter-build-args="--no-codesign" || true
+          # Указываем "." (текущая папка) как путь к приложению.
+          # Если flet упадет, мы увидим причину, так как убрали || true
+          flet build ipa . --yes --product "kunigram" --icon "assets/icon.png" --flutter-build-args="--no-codesign"
           
       - name: Diagnostic & Create IPA
+        if: always() # Запускать, даже если сборка выше упала, чтобы мы видели логи
         run: |
-          echo "--- Начинаем поиск и упаковку ---"
-          
-          # Ищем путь к любому .app файлу во всем каталоге build
+          echo "--- Поиск скомпилированного .app ---"
           APP_PATH=$(find build -name "*.app" -type d | grep -v "simulator" | head -n 1)
           
           if [ -z "$APP_PATH" ]; then
-            echo "ОШИБКА: Приложение .app всё еще не найдено!"
-            ls -R build
+            echo "ОШИБКА: Приложение .app не найдено!"
+            # Посмотрим, что вообще создалось в папке build, если она есть
+            [ -d "build" ] && ls -R build || echo "Папка build не существует"
             exit 1
           fi
           
-          echo "Приложение найдено здесь: $APP_PATH"
-          
-          # Создаем структуру для IPA
+          echo "Приложение найдено: $APP_PATH"
           mkdir -p Payload
-          
-          # Копируем найденное приложение в Payload
           cp -r "$APP_PATH" Payload/
-          
-          # Проверяем, что внутри Payload
-          ls -R Payload/
-          
-          # Упаковываем в IPA
           zip -r my_app.ipa Payload
           
       - name: Upload Artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: my-app-bundle
